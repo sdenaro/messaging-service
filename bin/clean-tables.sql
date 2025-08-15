@@ -1,3 +1,3 @@
-DROP TABLE public.sms_messages;
-DROP TABLE public.email_messages;
 DROP TABLE public.attachments;
+DROP TABLE public.conversations;
+DROP TABLE public.messages;
