@@ -2,12 +2,16 @@
 
 """
 import datetime
+import config as Config
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, String, Enum as SQLAlchemyEnum, DateTime
+from sqlalchemy import Integer, String, DateTime, create_engine, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 from typing import List
+from app import db
 
-db = SQLAlchemy()
+uuid_query = """
+
+"""
 
 class Base(DeclarativeBase):
     pass
@@ -31,12 +35,36 @@ class Message(Base):
         back_populates="message", cascade="all, delete-orphan"
     )
     timestamp: Mapped[str] = mapped_column(String, nullable=False)
+#    timestamp: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
 
 class Conversation(Base):
     __tablename__ = 'conversations'
     id: Mapped[int] = mapped_column(primary_key=True)
-    messageid: Mapped[int] = mapped_column(Integer)
     to: Mapped[str] = mapped_column(String, nullable=False)
     frm: Mapped[str] = mapped_column('from', String, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
     threadcode: Mapped[str] = mapped_column(String, nullable=False)
+
+def check_for_thread(to:str, frm:str) -> str:
+    
+    engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
+
+    with engine.connect() as connection:
+    
+        result = connection.execute(uuid_query, 
+            {"to_param": to_user, "from_param": from_user})
+            
+        # .scalar_one_or_none() is useful for fetching a single value from a
+        # query that is expected to return at most one row.
+        
+        found_uuid = result.scalar_one_or_none()
+
+        if found_uuid:
+            print(f"✔️ Found Message UUID: {found_uuid}")
+        else:
+            print("🔸 No matching message found.")
+
+        return found_uuid
+
+
+

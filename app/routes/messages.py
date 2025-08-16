@@ -5,13 +5,13 @@ hatch interview message service app
 import logging
 from flask import Flask, request
 from app.models.db import db, Attachment, Conversation, Message
+from flask import current_app as app
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-app = Flask(__name__)
-
-@app.route("/api/messages", methods=["POST"])
+@app.route("/api/messages/sms", methods=["POST"])
+@app.route("/api/webhooks/sms", methods=["POST"])
 def create_message():
     """
     Handles POST requests to create a new message with optional attachments.
@@ -20,11 +20,17 @@ def create_message():
     logging.info("Received POST request on /api/messages with data: %s", data)
 
     attachments_data = data.pop("attachments", [])
-    
-    new_message = Message(**data)
+    logging.info(data)
+
+    #new_message = Message(**data)
+    new_message = Message(frm=data["from"], 
+                          to=data["to"], 
+                          type=data["type"], 
+                          body=data["body"], 
+                          timestamp=data["timestamp"])
     
     for attachment_data in attachments_data:
-        new_attachment = Attachment(url=attachment_data["url"])
+        new_attachment = Attachment(url=attachment_data)
         new_message.attachments.append(new_attachment)
         
     db.session.add(new_message)
@@ -32,8 +38,7 @@ def create_message():
 
     return "OK", 200
 
-@app.route("/api/messages/sms", methods=["POST"])
-@app.route("/api/webhooks/sms", methods=["POST"])
+@app.route("/api/messages", methods=["POST"])
 def sms():
     """
     Handles POST requests to sms endpoint
