@@ -5,7 +5,7 @@ hatch interview message service app
 import logging
 from typing import List
 from flask import Flask, request, abort, jsonify
-from app.models.db import db, Attachment, Conversation, Message
+from app.models.db import db, Attachment, Message, check_for_thread
 from flask import current_app as app
 from app.utils import add_attachments
 
@@ -29,6 +29,8 @@ def create_message():
                     timestamp=data["timestamp"])
 
     # Optional
+
+    new_message.threadcode = check_for_thread(new_message.to,new_message.frm)
 
     try:
 
@@ -63,6 +65,8 @@ def sms():
                     type="email", 
                     body=data["body"], 
                     timestamp=data["timestamp"])
+
+    new_email.threadcode = check_for_thread(new_email.to,new_email.frm)
 
     try:
 

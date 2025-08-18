@@ -2,16 +2,13 @@
 
 """
 import datetime
+import uuid
 import config as Config
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, String, DateTime, create_engine, text
+from sqlalchemy import Integer, String, DateTime, select, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 from typing import List
 from app import db
-
-UUID_QUERY = """
-
-"""
 
 class Base(DeclarativeBase):
     pass
@@ -30,6 +27,7 @@ class Message(Base):
     to: Mapped[str] = mapped_column(String, nullable=False)
     type: Mapped[str] = mapped_column(String, nullable=False) 
     body: Mapped[str] = mapped_column(String, nullable=False)
+    threadcode: Mapped[str] = mapped_column(String, nullable=False)
     messaging_provider_id: Mapped[str] = mapped_column(String, nullable=True)
     xillio_id: Mapped[str] = mapped_column(String, nullable=True)
     attachments: Mapped[List["Attachment"] | None ] = relationship(
@@ -38,31 +36,11 @@ class Message(Base):
     timestamp: Mapped[str] = mapped_column(String, nullable=False)
 #    timestamp: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
 
-class Conversation(Base):
-    __tablename__ = 'conversations'
-    id: Mapped[int] = mapped_column(primary_key=True)
-    to: Mapped[str] = mapped_column(String, nullable=False)
-    frm: Mapped[str] = mapped_column('from', String, nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
-    threadcode: Mapped[str] = mapped_column(String, nullable=False)
-
 def check_for_thread(to_user:str, from_user:str) -> str:
 
-    engine = create_engine(db.engine)
+    message = db.session.execute(Message.__table__.select().where(Message.frm==to_user and Message.to==from_user)).first()
 
-    with engine.connect() as connection:
-    
-        result = connection.execute(UUID_QUERY, 
-            {"to_param": to_user, "from_param": from_user})
-            
-        # .scalar_one_or_none() is useful for fetching a single value from a
-        # query that is expected to return at most one row.
-        
-        found_uuid = result.scalar_one_or_none()
-
-        if found_uuid:
-            print(f"✔️ Found Message UUID: {found_uuid}")
-        else:
-            print("🔸 No matching message found.")
-
-        return found_uuid
+    if message:
+        return message.threadcode
+    else:
+        return uuid.uuid4()
