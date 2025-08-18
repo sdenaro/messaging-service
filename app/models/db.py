@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 from typing import List
 from app import db
 
-uuid_query = """
+UUID_QUERY = """
 
 """
 
@@ -30,6 +30,7 @@ class Message(Base):
     to: Mapped[str] = mapped_column(String, nullable=False)
     type: Mapped[str] = mapped_column(String, nullable=False) 
     body: Mapped[str] = mapped_column(String, nullable=False)
+    messaging_provider_id: Mapped[str] = mapped_column(String, nullable=True)
     xillio_id: Mapped[str] = mapped_column(String, nullable=True)
     attachments: Mapped[List["Attachment"] | None ] = relationship(
         back_populates="message", cascade="all, delete-orphan"
@@ -45,13 +46,13 @@ class Conversation(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
     threadcode: Mapped[str] = mapped_column(String, nullable=False)
 
-def check_for_thread(to:str, frm:str) -> str:
-    
-    engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
+def check_for_thread(to_user:str, from_user:str) -> str:
+
+    engine = create_engine(db.engine)
 
     with engine.connect() as connection:
     
-        result = connection.execute(uuid_query, 
+        result = connection.execute(UUID_QUERY, 
             {"to_param": to_user, "from_param": from_user})
             
         # .scalar_one_or_none() is useful for fetching a single value from a
@@ -65,6 +66,3 @@ def check_for_thread(to:str, frm:str) -> str:
             print("🔸 No matching message found.")
 
         return found_uuid
-
-
-

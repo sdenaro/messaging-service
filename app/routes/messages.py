@@ -3,9 +3,11 @@ hatch interview message service app
 """
 
 import logging
-from flask import Flask, request
+from typing import List
+from flask import Flask, request, abort, jsonify
 from app.models.db import db, Attachment, Conversation, Message
 from flask import current_app as app
+from app.utils import add_attachments
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -16,35 +18,70 @@ def create_message():
     """
     Handles POST requests to create a new message with optional attachments.
     """
-    data = request.get_json()
-    logging.info("Received POST request on /api/messages with data: %s", data)
 
-    attachments_data = data.pop("attachments", [])
+    data = request.get_json()
     logging.info(data)
 
-    #new_message = Message(**data)
     new_message = Message(frm=data["from"], 
-                          to=data["to"], 
-                          type=data["type"], 
-                          body=data["body"], 
-                          timestamp=data["timestamp"])
-    
-    for attachment_data in attachments_data:
-        new_attachment = Attachment(url=attachment_data)
-        new_message.attachments.append(new_attachment)
-        
+                    to=data["to"], 
+                    type=data["type"], 
+                    body=data["body"], 
+                    timestamp=data["timestamp"])
+
+    # Optional
+
+    try:
+
+        attachments_data = data.pop("attachments", [])
+
+        if attachments_data:
+            new_message.attachments = add_attachments(attachments_data)
+
+        if "messaging_provider_id" in data:
+            new_message.messaging_provider_id=data["messaging_provider_id"],
+
+    except (TypeError, AttributeError):
+        abort(400, description="bad request")
+
     db.session.add(new_message)
     db.session.commit()
 
     return "OK", 200
 
-@app.route("/api/messages", methods=["POST"])
+@app.route("/api/messages/email", methods=["POST"])
+@app.route("/api/webhooks/email", methods=["POST"])
 def sms():
     """
     Handles POST requests to sms endpoint
     """
+
     data = request.get_json()
+    logging.info(data)
+
+    new_email = Message(frm=data["from"], 
+                    to=data["to"], 
+                    type="email", 
+                    body=data["body"], 
+                    timestamp=data["timestamp"])
+
+    try:
+
+        attachments_data = data.pop("attachments", [])
+
+        if attachments_data:
+            new_email.attachments = add_attachments(attachments_data)
+
+        if "xillio_id" in data:
+            new_email.xillio_id=data["xillio_id"],
+
+    except (TypeError, AttributeError):
+        abort(400, description="bad request")
+
+    db.session.add(new_email)
+    db.session.commit()
+
     logging.info("Received POST request on %s with data: %s", request.path, data)
+
     return "OK", 200
 
 @app.route("/api/conversations/", methods=["GET"])
@@ -65,6 +102,3 @@ def return_conversation():
     data = request.get_json()
     logging.info("Received GET request on %s for %s with data: %s", request.path, id, data)
     return "OK", 200
-
-#if __name__ == "__main__":
-#    app.run(debug=True)
