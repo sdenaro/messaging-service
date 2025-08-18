@@ -77,6 +77,12 @@ sms2.threadcode = uuid_check(sms2.to,sms2.frm)
 i = session.add(sms2)
 
 
+threads_list = session.query(Message.threadcode).distinct().all()
+
+for item in threads_list:
+    print(item)
+
+
 ### email
 
 
