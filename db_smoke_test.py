@@ -77,11 +77,24 @@ sms2.threadcode = uuid_check(sms2.to,sms2.frm)
 i = session.add(sms2)
 
 
+
+
 threads_list = session.query(Message.threadcode).distinct().all()
 
 for item in threads_list:
     print(item)
 
+
+thr = session.execute(Message.__table__.select().where(Message.threadcode==uuid_text)).all()
+
+
+#thr = session.query(Message).filter(Message.threadcode==uuid_text).all()
+
+
+#thr = session.query(Message.threadcode==uuid_text).all()
+
+for item in thr:
+    print(item)
 
 ### email
 
@@ -107,12 +120,6 @@ for item in threads_list:
 #email3 = Message(frm="[user@usehatchapp.com](mailto:user@usehatchapp.com)", to="[contact@gmail.com](mailto:contact@gmail.com)", body="test3", timestamp="timestamp",  type="email", xillio_id="xillio_id  1")
 #session.add(email3)
 
-
-# no attachment
-
-# one attachment
-
-# two attachments
 
 
 session.commit()

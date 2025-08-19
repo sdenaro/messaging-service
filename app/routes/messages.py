@@ -4,7 +4,7 @@ hatch interview message service app
 
 import logging
 from typing import List
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort, jsonify, Response
 from app.models.db import db, Attachment, Message, check_for_thread, threads, conversation
 from flask import current_app as app
 from app.utils import add_attachments
@@ -94,18 +94,25 @@ def conversations():
     Handles GET requests to conversations endpoint, returns list of conversations
     """
 
-    data = request.get_json()
-    logging.info("Received GET request on %s with data: %s", request.path, data)
+    logging.info("Received GET request on %s ", request.path)
 
     return jsonify(threads()), 200
 
 
-@app.route("/api/conversations/<id:str>/messages", methods=["POST"])
-def return_conversation():
+@app.route("/api/conversations/<string:id>/messages", methods=["GET"])
+def return_conversation(id:str):
     """
     Returns conversation thread for id
     """
-    data = request.get_json()
-    logging.info("Received GET request on %s for %s with data: %s", request.path, id, data)
+    #data = request.get_json()
+    logging.info("Received GET request on %s for %s", request.path, id)
 
-    return jsonify(conversation(id)), 200
+    l = conversation(id)
+
+    logging.info(l)
+
+    serialized = [obj.serialize() for obj in l]
+
+#    return Response(json_string, mimetype='application/json')
+
+    return jsonify(serialized), 200

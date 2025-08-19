@@ -3,7 +3,6 @@
 """
 import datetime
 import uuid
-import config as Config
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, DateTime, select, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
@@ -20,6 +19,9 @@ class Attachment(Base):
     url: Mapped[str] = mapped_column(String, nullable=False)
     message: Mapped["Message"] = relationship(back_populates="attachments")
 
+    def serialize(self):
+        return {"url": self.url}
+
 class Message(Base):
     __tablename__ = 'messages'
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -35,6 +37,20 @@ class Message(Base):
     )
     timestamp: Mapped[str] = mapped_column(String, nullable=False)
 #    timestamp: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
+    def serialize(self):
+
+        json_object = {"from":self.frm,"to":self.to,"body": self.body, "timestamp": self.timestamp}
+
+        if self.messaging_provider_id:
+            json_object["messaging_provider_id"] = self.messaging_provider_id 
+        if self.xillio_id:
+            json_object["xillio_id"] = self.xillio_id 
+        if self.attachments:
+            json_object["attachments"] = [obj.serialize() for obj in self.attachments]
+        if self.messaging_provider_id:
+            json_object["messaging_provider_id"] = self.messaging_provider_id 
+
+        return json_object
 
 def threads():
     
@@ -46,7 +62,9 @@ def conversation(uuid:str) -> List[Message]:
     """
     return list of messages for uuid
     """
-    return db.session.execute(Message.__table__.select().where(Message.threadcode==uuid)).all()
+    messages = db.session.query(Message).filter(Message.threadcode==uuid).all()
+
+    return messages
 
 def check_for_thread(to_user:str, from_user:str) -> str:
     """
