@@ -109,10 +109,10 @@ def return_conversation(id:str):
 
     l = conversation(id)
 
-    logging.info(l)
+    if len(l) > 0:
 
-    serialized = [obj.serialize() for obj in l]
-
-#    return Response(json_string, mimetype='application/json')
-
-    return jsonify(serialized), 200
+        serialized = [obj.serialize() for obj in l]
+        return jsonify(serialized), 200
+    
+    else:
+        return jsonify("404 error Id not found",id), 404
