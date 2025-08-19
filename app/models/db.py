@@ -41,6 +41,8 @@ class Message(Base):
 
         json_object = {"from":self.frm,"to":self.to,"body": self.body, "timestamp": self.timestamp}
 
+        if self.type in ["SMS","MMS"]:
+            json_object["type"] = self.type 
         if self.messaging_provider_id:
             json_object["messaging_provider_id"] = self.messaging_provider_id 
         if self.xillio_id:
